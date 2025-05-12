@@ -7,6 +7,7 @@ namespace RevivalMod.Helpers
     {
         public static ConfigEntry<float> REVIVAL_DURATION;
         public static ConfigEntry<KeyCode> REVIVAL_KEY;
+        public static ConfigEntry<KeyCode> SUICIDE_KEY;
         public static ConfigEntry<float> REVIVAL_COOLDOWN;
         public static ConfigEntry<bool> RESTORE_DESTROYED_BODY_PARTS;
 
@@ -47,6 +48,11 @@ namespace RevivalMod.Helpers
                 "General",
                 "Revival Key",
                 KeyCode.F5
+            );
+            SUICIDE_KEY = config.Bind(
+                "General",
+                "Suicide Key",
+                KeyCode.F4
             );
             REVIVAL_COOLDOWN = config.Bind(
                 "General",

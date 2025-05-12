@@ -37,6 +37,12 @@ namespace RevivalMod.Patches
 
                 string playerId = player.ProfileId;
 
+                if (RevivalFeatures.IsPlayerSuicide(playerId))
+                {
+                    RevivalFeatures.playerSuicide(player);
+                    return true;
+                }
+                
                 // Check if player is invulnerable from recent revival
                 if (RevivalFeatures.IsPlayerInvulnerable(playerId))
                 {
@@ -70,6 +76,8 @@ namespace RevivalMod.Patches
                             return true;
                         }
                     }
+
+                    RevivalFeatures.savePlayerDamageType(player, damageType);
                     // Set the player in critical state for the revival system
                     RevivalFeatures.SetPlayerCriticalState(player, true);
 

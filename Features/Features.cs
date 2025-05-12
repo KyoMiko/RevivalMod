@@ -30,10 +30,12 @@ namespace RevivalMod.Features
         private static Dictionary<string, long> _lastRevivalTimesByPlayer = new Dictionary<string, long>();
         private static Dictionary<string, bool> _playerInCriticalState = new Dictionary<string, bool>();
         private static Dictionary<string, bool> _playerIsInvulnerable = new Dictionary<string, bool>();
+        private static Dictionary<string, bool> _playerIsSuicide = new Dictionary<string, bool>();
         private static Dictionary<string, float> _playerInvulnerabilityTimers = new Dictionary<string, float>();
         //private static Dictionary<string, float> _originalAwareness = new Dictionary<string, float>(); // Renamed from _criticalModeTags
         private static Dictionary<string, float> _originalMovementSpeed = new Dictionary<string, float>(); // Store original movement speed
         private static Dictionary<string, EFT.PlayerAnimator.EWeaponAnimationType> _originalWeaponAnimationType = new Dictionary<string, PlayerAnimator.EWeaponAnimationType>();
+        private static Dictionary<string, EDamageType> _originalDamageType = new Dictionary<string, EDamageType>();
         private static Player PlayerClient { get; set; } = null;
 
         protected override MethodBase GetTargetMethod()
@@ -96,6 +98,11 @@ namespace RevivalMod.Features
                     if (Input.GetKeyDown(Settings.REVIVAL_KEY.Value))
                     {
                         TryPerformManualRevival(__instance);
+                    }
+
+                    if (Input.GetKeyDown(Settings.SUICIDE_KEY.Value))
+                    {
+                        TryPerformSuicide(__instance);
                     }
                 }
             }
@@ -329,6 +336,43 @@ namespace RevivalMod.Features
             }
         }
 
+
+        public static bool TryPerformSuicide(Player player)
+        {
+            Plugin.LogSource.LogInfo($"Player try to suicide");
+            if (player == null)
+            {
+                return false;
+            }
+
+            //mark player try to suicide
+            string playerId = player.ProfileId;
+            _playerIsSuicide[playerId] = true;
+            
+            try
+            {
+                // Modified to provide limited healing instead of full healing
+                ActiveHealthController healthController = player.ActiveHealthController;
+                if (healthController == null)
+                {
+                    Plugin.LogSource.LogError("Could not get ActiveHealthController");
+                    return false;
+                }
+                if (_originalDamageType.TryGetValue(playerId, out EDamageType damageType))
+                {
+                    healthController.Kill(damageType);
+                } else
+                {
+                    healthController.Kill(EDamageType.Bullet);
+                }
+            }
+            catch (Exception ex)
+            {
+            }
+
+            return false;
+        }
+        
 
         public static bool TryPerformManualRevival(Player player)
         {
@@ -644,6 +688,27 @@ namespace RevivalMod.Features
         public static bool IsPlayerInvulnerable(string playerId)
         {
             return _playerIsInvulnerable.TryGetValue(playerId, out bool invulnerable) && invulnerable;
+        }
+
+        public static bool IsPlayerSuicide(string playerId)
+        {
+            return _playerIsSuicide.TryGetValue(playerId, out bool suicide) && suicide;
+        }
+
+        public static void playerSuicide(Player player)
+        {
+            SetPlayerCriticalState(player, false);
+            String playerId = player.ProfileId;
+            if(_playerIsSuicide.TryGetValue(playerId, out bool suicide) && suicide)
+            {
+                _playerIsSuicide[playerId] = false;
+            }
+        }
+
+        public static void savePlayerDamageType(Player player, EDamageType damageType)
+        {
+            String playerId = player.ProfileId;
+            _originalDamageType[playerId] = damageType;
         }
     }
 }
